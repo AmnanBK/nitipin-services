@@ -13,3 +13,8 @@ export const registerBuyerSchema = Joi.object({
   password: Joi.string().min(6).required(),
   phone: Joi.string().min(10).max(20).optional(),
 });
+
+export const loginSchema = Joi.object({
+  email: Joi.string().email().required(),
+  password: Joi.string().required(),
+});
