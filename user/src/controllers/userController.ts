@@ -52,7 +52,7 @@ export const getTravelerById = async (req: AuthRequest, res: Response) => {
  * Update traveler profile (Name, Phone, Profile Photo, Bio, Country ID).
  * Restricted to the profile owner.
  */
-import { updateTravelerSchema, updateTravelerStatusSchema, updateTravelerCountrySchema, updateBuyerSchema } from '../validators/userValidator';
+import { updateTravelerSchema, updateTravelerStatusSchema, updateTravelerCountrySchema, updateBuyerSchema, createBuyerAddressSchema } from '../validators/userValidator';
 
 export const updateTraveler = async (req: AuthRequest, res: Response) => {
   try {
@@ -542,6 +542,123 @@ export const updateBuyer = async (req: AuthRequest, res: Response) => {
     });
   }
 };
+
+/**
+ * POST /api/buyers/:id/addresses
+ * Add a new shipping address for a buyer.
+ * Restricted to the profile owner.
+ */
+export const createBuyerAddress = async (req: AuthRequest, res: Response) => {
+  let conn;
+  try {
+    const { id } = req.params;
+
+    // 1. Ownership validation
+    if (!req.user) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Unauthorized: User not authenticated',
+      });
+    }
+
+    if (parseInt(String(req.user.id)) !== parseInt(String(id)) || req.user.role !== 'buyer') {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Forbidden: Not the account owner',
+      });
+    }
+
+    // 2. Request body validation
+    const { error, value } = createBuyerAddressSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({
+        status: 'error',
+        message: error.details[0].message,
+      });
+    }
+
+    // 3. Verify buyer exists
+    const [buyer]: any = await db.execute('SELECT id FROM buyers WHERE id = ?', [id]);
+    if (buyer.length === 0) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Buyer not found',
+      });
+    }
+
+    // 4. Start database transaction
+    conn = await db.getConnection();
+    await conn.beginTransaction();
+
+    // Check if buyer has any existing addresses
+    const [existingAddresses]: any = await conn.execute(
+      'SELECT id FROM buyer_addresses WHERE buyer_id = ?',
+      [id]
+    );
+
+    let isDefault = value.is_default !== undefined ? value.is_default : 0;
+
+    // Force default if it's the first address
+    if (existingAddresses.length === 0) {
+      isDefault = 1;
+    }
+
+    // If setting as default, reset all other addresses
+    if (isDefault === 1) {
+      await conn.execute(
+        'UPDATE buyer_addresses SET is_default = 0 WHERE buyer_id = ?',
+        [id]
+      );
+    }
+
+    // Insert new address
+    const [result]: any = await conn.execute(
+      `INSERT INTO buyer_addresses (buyer_id, label, full_address, city, postal_code, is_default)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        id,
+        value.label,
+        value.full_address,
+        value.city,
+        value.postal_code || null,
+        isDefault,
+      ]
+    );
+
+    const insertedId = result.insertId;
+
+    // Retrieve inserted address details
+    const [addressRows]: any = await conn.execute(
+      'SELECT id, buyer_id, label, full_address, city, postal_code, is_default, created_at FROM buyer_addresses WHERE id = ?',
+      [insertedId]
+    );
+
+    await conn.commit();
+
+    const newAddress = addressRows[0];
+    newAddress.is_default = Number(newAddress.is_default);
+
+    return res.status(201).json({
+      status: 'success',
+      message: 'Address added successfully',
+      data: newAddress,
+    });
+  } catch (error: any) {
+    if (conn) {
+      await conn.rollback();
+    }
+    console.error('❌ Create Buyer Address Error:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Internal server error',
+    });
+  } finally {
+    if (conn) {
+      conn.release();
+    }
+  }
+};
+
 
 
 
