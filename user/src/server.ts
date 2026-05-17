@@ -3,6 +3,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { db, connectMongo } from './config/db';
 
+import userRoutes from './routes/userRoutes';
+
 dotenv.config();
 
 const app = express();
@@ -10,6 +12,16 @@ const PORT = process.env.PORT || 8082;
 
 app.use(cors());
 app.use(express.json());
+
+// Log all incoming requests to debug proxy paths
+app.use((req, res, next) => {
+  console.log(`🔍 [User Service] ${req.method} ${req.url} | Headers:`, JSON.stringify(req.headers));
+  next();
+});
+
+// Register routes
+app.use('/', userRoutes);
+
 
 app.get('/health', async (req, res) => {
   try {
@@ -31,8 +43,8 @@ app.get('/health', async (req, res) => {
 });
 
 const startServer = async () => {
-  // Try connecting to MongoDB on startup
-  await connectMongo();
+  // Try connecting to MongoDB on startup in a non-blocking way
+  connectMongo();
   
   app.listen(PORT, () => {
     console.log(`🚀 User Service is running on port ${PORT}`);
