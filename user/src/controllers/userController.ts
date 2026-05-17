@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { db } from '../config/db';
 import { AuthRequest } from '../middleware/authMiddleware';
+import { Review } from '../models/reviewModel';
 
 /**
  * GET /api/travelers/:id
@@ -343,6 +344,60 @@ export const getTravelerBalance = async (req: AuthRequest, res: Response) => {
     });
   }
 };
+
+/**
+ * GET /api/travelers/:id/reviews
+ * Retrieve MongoDB reviews for a traveler.
+ * Accessible to guests / public.
+ */
+export const getTravelerReviews = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // 1. Verify traveler exists in MySQL
+    const [traveler]: any = await db.execute('SELECT name FROM travelers WHERE id = ?', [id]);
+    if (traveler.length === 0) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Traveler not found',
+      });
+    }
+
+    // 2. Fetch reviews from MongoDB (sorted by created_at descending)
+    let reviews: any[] = [];
+    try {
+      reviews = await Review.find({ traveler_id: parseInt(String(id)) }).sort({ created_at: -1 });
+    } catch (mongoError: any) {
+      console.warn('⚠️ MongoDB is offline or failed. Gracefully returning empty reviews list. Error:', mongoError.message);
+    }
+
+    // 3. Calculate summary metrics
+    const totalReviews = reviews.length;
+    const averageRating = totalReviews > 0
+      ? Number((reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews).toFixed(1))
+      : 0;
+
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        traveler_id: parseInt(String(id)),
+        traveler_name: traveler[0].name,
+        summary: {
+          total_reviews: totalReviews,
+          average_rating: averageRating,
+        },
+        reviews,
+      },
+    });
+  } catch (error: any) {
+    console.error('❌ Get Traveler Reviews Error:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Internal server error',
+    });
+  }
+};
+
 
 
 
