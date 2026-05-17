@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getTravelerById, updateTraveler, updateTravelerStatus, updateTravelerCountry, getTravelerBalance, getTravelerReviews, getBuyerById, updateBuyer, createBuyerAddress } from '../controllers/userController';
+import { getTravelerById, updateTraveler, updateTravelerStatus, updateTravelerCountry, getTravelerBalance, getTravelerReviews, getBuyerById, updateBuyer, createBuyerAddress, getBuyerAddresses } from '../controllers/userController';
 import { authMiddleware } from '../middleware/authMiddleware';
 
 const router = Router();
@@ -25,6 +25,8 @@ router.put('/buyers/:id', authMiddleware, updateBuyer);
 router.put('/api/buyers/:id', authMiddleware, updateBuyer);
 router.post('/buyers/:id/addresses', authMiddleware, createBuyerAddress);
 router.post('/api/buyers/:id/addresses', authMiddleware, createBuyerAddress);
+router.get('/buyers/:id/addresses', authMiddleware, getBuyerAddresses);
+router.get('/api/buyers/:id/addresses', authMiddleware, getBuyerAddresses);
 
 // Fallback/debug route to see if path is stripped by gateway
 router.get('/:id', authMiddleware, getTravelerById);

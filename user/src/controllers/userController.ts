@@ -659,6 +659,64 @@ export const createBuyerAddress = async (req: AuthRequest, res: Response) => {
   }
 };
 
+/**
+ * GET /api/buyers/:id/addresses
+ * Retrieve a list of shipping addresses for a buyer.
+ * Restricted to the profile owner.
+ */
+export const getBuyerAddresses = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // 1. Ownership validation
+    if (!req.user) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Unauthorized: User not authenticated',
+      });
+    }
+
+    if (parseInt(String(req.user.id)) !== parseInt(String(id)) || req.user.role !== 'buyer') {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Forbidden: Not the account owner',
+      });
+    }
+
+    // 2. Verify buyer exists
+    const [buyer]: any = await db.execute('SELECT id FROM buyers WHERE id = ?', [id]);
+    if (buyer.length === 0) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Buyer not found',
+      });
+    }
+
+    // 3. Fetch buyer addresses (Sorted by is_default desc, then id desc)
+    const [rows]: any = await db.execute(
+      'SELECT id, buyer_id, label, full_address, city, postal_code, is_default, created_at FROM buyer_addresses WHERE buyer_id = ? ORDER BY is_default DESC, id DESC',
+      [id]
+    );
+
+    const addresses = rows.map((address: any) => ({
+      ...address,
+      is_default: Number(address.is_default),
+    }));
+
+    return res.status(200).json({
+      status: 'success',
+      data: addresses,
+    });
+  } catch (error: any) {
+    console.error('❌ Get Buyer Addresses Error:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Internal server error',
+    });
+  }
+};
+
+
 
 
 
