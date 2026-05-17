@@ -969,6 +969,103 @@ export const deleteBuyerAddress = async (req: AuthRequest, res: Response) => {
   }
 };
 
+/**
+ * PATCH /api/buyers/:id/addresses/:address_id/default
+ * Set a shipping address as default for a buyer.
+ * Restricted to the profile owner.
+ */
+export const setDefaultBuyerAddress = async (req: AuthRequest, res: Response) => {
+  let conn;
+  try {
+    const { id, address_id } = req.params;
+
+    // 1. Ownership validation
+    if (!req.user) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Unauthorized: User not authenticated',
+      });
+    }
+
+    if (parseInt(String(req.user.id)) !== parseInt(String(id)) || req.user.role !== 'buyer') {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Forbidden: Not the account owner',
+      });
+    }
+
+    // 2. Verify buyer exists
+    const [buyer]: any = await db.execute('SELECT id FROM buyers WHERE id = ?', [id]);
+    if (buyer.length === 0) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Buyer not found',
+      });
+    }
+
+    // 3. Start database transaction
+    conn = await db.getConnection();
+    await conn.beginTransaction();
+
+    // Check if the address exists and belongs to the buyer
+    const [existingAddress]: any = await conn.execute(
+      'SELECT id, is_default FROM buyer_addresses WHERE id = ? AND buyer_id = ?',
+      [address_id, id]
+    );
+
+    if (existingAddress.length === 0) {
+      await conn.rollback();
+      return res.status(404).json({
+        status: 'error',
+        message: 'Address not found or does not belong to this buyer',
+      });
+    }
+
+    // Reset all other addresses
+    await conn.execute(
+      'UPDATE buyer_addresses SET is_default = 0 WHERE buyer_id = ?',
+      [id]
+    );
+
+    // Set this address as default
+    await conn.execute(
+      'UPDATE buyer_addresses SET is_default = 1 WHERE id = ?',
+      [address_id]
+    );
+
+    // Retrieve updated address details
+    const [updatedRows]: any = await conn.execute(
+      'SELECT id, buyer_id, label, full_address, city, postal_code, is_default, created_at FROM buyer_addresses WHERE id = ?',
+      [address_id]
+    );
+
+    await conn.commit();
+
+    const updatedAddress = updatedRows[0];
+    updatedAddress.is_default = Number(updatedAddress.is_default);
+
+    return res.status(200).json({
+      status: 'success',
+      message: 'Address set as default successfully',
+      data: updatedAddress,
+    });
+  } catch (error: any) {
+    if (conn) {
+      await conn.rollback();
+    }
+    console.error('❌ Set Default Buyer Address Error:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Internal server error',
+    });
+  } finally {
+    if (conn) {
+      conn.release();
+    }
+  }
+};
+
+
 
 
 
