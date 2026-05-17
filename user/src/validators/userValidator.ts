@@ -44,3 +44,14 @@ export const createBuyerAddressSchema = Joi.object({
   postal_code: Joi.string().max(10).allow(null, '').optional(),
   is_default: Joi.number().valid(0, 1).optional(),
 });
+
+/**
+ * Joi validation schema for updating a buyer address.
+ */
+export const updateBuyerAddressSchema = Joi.object({
+  label: Joi.string().max(50).optional(),
+  full_address: Joi.string().optional(),
+  city: Joi.string().max(100).optional(),
+  postal_code: Joi.string().max(10).allow(null, '').optional(),
+  is_default: Joi.number().valid(0, 1).optional(),
+});

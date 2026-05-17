@@ -52,7 +52,7 @@ export const getTravelerById = async (req: AuthRequest, res: Response) => {
  * Update traveler profile (Name, Phone, Profile Photo, Bio, Country ID).
  * Restricted to the profile owner.
  */
-import { updateTravelerSchema, updateTravelerStatusSchema, updateTravelerCountrySchema, updateBuyerSchema, createBuyerAddressSchema } from '../validators/userValidator';
+import { updateTravelerSchema, updateTravelerStatusSchema, updateTravelerCountrySchema, updateBuyerSchema, createBuyerAddressSchema, updateBuyerAddressSchema } from '../validators/userValidator';
 
 export const updateTraveler = async (req: AuthRequest, res: Response) => {
   try {
@@ -715,6 +715,162 @@ export const getBuyerAddresses = async (req: AuthRequest, res: Response) => {
     });
   }
 };
+
+/**
+ * PUT /api/buyers/:id/addresses/:address_id
+ * Update an existing shipping address for a buyer.
+ * Restricted to the profile owner.
+ */
+export const updateBuyerAddress = async (req: AuthRequest, res: Response) => {
+  let conn;
+  try {
+    const { id, address_id } = req.params;
+
+    // 1. Ownership validation
+    if (!req.user) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Unauthorized: User not authenticated',
+      });
+    }
+
+    if (parseInt(String(req.user.id)) !== parseInt(String(id)) || req.user.role !== 'buyer') {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Forbidden: Not the account owner',
+      });
+    }
+
+    // 2. Request body validation
+    const { error, value } = updateBuyerAddressSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({
+        status: 'error',
+        message: error.details[0].message,
+      });
+    }
+
+    // 3. Verify buyer exists
+    const [buyer]: any = await db.execute('SELECT id FROM buyers WHERE id = ?', [id]);
+    if (buyer.length === 0) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Buyer not found',
+      });
+    }
+
+    // 4. Start database transaction
+    conn = await db.getConnection();
+    await conn.beginTransaction();
+
+    // Check if the address exists and belongs to the buyer
+    const [existingAddress]: any = await conn.execute(
+      'SELECT id, is_default FROM buyer_addresses WHERE id = ? AND buyer_id = ?',
+      [address_id, id]
+    );
+
+    if (existingAddress.length === 0) {
+      await conn.rollback();
+      return res.status(404).json({
+        status: 'error',
+        message: 'Address not found or does not belong to this buyer',
+      });
+    }
+
+    const currentDefault = Number(existingAddress[0].is_default);
+    let newDefault = value.is_default !== undefined ? value.is_default : currentDefault;
+
+    // Fetch all addresses for this buyer to count them
+    const [allAddresses]: any = await conn.execute(
+      'SELECT id, is_default FROM buyer_addresses WHERE buyer_id = ?',
+      [id]
+    );
+
+    // If it's the only address, it MUST remain default
+    if (allAddresses.length === 1) {
+      newDefault = 1;
+    }
+
+    // If user tries to unset the default address (changing 1 to 0) directly when there are other addresses
+    if (currentDefault === 1 && newDefault === 0 && allAddresses.length > 1) {
+      await conn.rollback();
+      return res.status(400).json({
+        status: 'error',
+        message: 'Cannot unset the default address. Please set another address as default instead.',
+      });
+    }
+
+    // If setting this address as default, reset all other addresses
+    if (newDefault === 1 && currentDefault === 0) {
+      await conn.execute(
+        'UPDATE buyer_addresses SET is_default = 0 WHERE buyer_id = ?',
+        [id]
+      );
+    }
+
+    // Dynamic SQL update builder
+    const fieldsToUpdate: string[] = [];
+    const values: any[] = [];
+
+    if (value.label !== undefined) {
+      fieldsToUpdate.push('label = ?');
+      values.push(value.label);
+    }
+    if (value.full_address !== undefined) {
+      fieldsToUpdate.push('full_address = ?');
+      values.push(value.full_address);
+    }
+    if (value.city !== undefined) {
+      fieldsToUpdate.push('city = ?');
+      values.push(value.city);
+    }
+    if (value.postal_code !== undefined) {
+      fieldsToUpdate.push('postal_code = ?');
+      values.push(value.postal_code === '' ? null : value.postal_code);
+    }
+    if (value.is_default !== undefined || newDefault === 1) {
+      fieldsToUpdate.push('is_default = ?');
+      values.push(newDefault);
+    }
+
+    if (fieldsToUpdate.length > 0) {
+      values.push(address_id);
+      const sql = `UPDATE buyer_addresses SET ${fieldsToUpdate.join(', ')} WHERE id = ?`;
+      await conn.execute(sql, values);
+    }
+
+    // Retrieve updated address details
+    const [updatedRows]: any = await conn.execute(
+      'SELECT id, buyer_id, label, full_address, city, postal_code, is_default, created_at FROM buyer_addresses WHERE id = ?',
+      [address_id]
+    );
+
+    await conn.commit();
+
+    const updatedAddress = updatedRows[0];
+    updatedAddress.is_default = Number(updatedAddress.is_default);
+
+    return res.status(200).json({
+      status: 'success',
+      message: 'Address updated successfully',
+      data: updatedAddress,
+    });
+  } catch (error: any) {
+    if (conn) {
+      await conn.rollback();
+    }
+    console.error('❌ Update Buyer Address Error:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Internal server error',
+    });
+  } finally {
+    if (conn) {
+      conn.release();
+    }
+  }
+};
+
 
 
 
