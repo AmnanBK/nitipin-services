@@ -17,3 +17,10 @@ export const updateTravelerSchema = Joi.object({
 export const updateTravelerStatusSchema = Joi.object({
   account_status: Joi.string().valid('active', 'inactive').required(),
 });
+
+/**
+ * Joi validation schema for updating traveler country.
+ */
+export const updateTravelerCountrySchema = Joi.object({
+  country_id: Joi.number().integer().positive().required(),
+});

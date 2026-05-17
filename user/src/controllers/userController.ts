@@ -51,7 +51,7 @@ export const getTravelerById = async (req: AuthRequest, res: Response) => {
  * Update traveler profile (Name, Phone, Profile Photo, Bio, Country ID).
  * Restricted to the profile owner.
  */
-import { updateTravelerSchema, updateTravelerStatusSchema } from '../validators/userValidator';
+import { updateTravelerSchema, updateTravelerStatusSchema, updateTravelerCountrySchema } from '../validators/userValidator';
 
 export const updateTraveler = async (req: AuthRequest, res: Response) => {
   try {
@@ -217,5 +217,78 @@ export const updateTravelerStatus = async (req: AuthRequest, res: Response) => {
     });
   }
 };
+
+/**
+ * PATCH /api/travelers/:id/country
+ * Update traveler country_id.
+ * Restricted to the profile owner.
+ */
+export const updateTravelerCountry = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // 1. Ownership validation
+    if (!req.user) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Unauthorized: User not authenticated',
+      });
+    }
+
+    if (parseInt(String(req.user.id)) !== parseInt(String(id)) || req.user.role !== 'traveler') {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Forbidden: Not the account owner',
+      });
+    }
+
+    // 2. Request body validation
+    const { error, value } = updateTravelerCountrySchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({
+        status: 'error',
+        message: error.details[0].message,
+      });
+    }
+
+    // 3. Check if traveler exists
+    const [existingTraveler]: any = await db.execute('SELECT id FROM travelers WHERE id = ?', [id]);
+    if (existingTraveler.length === 0) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Traveler not found',
+      });
+    }
+
+    // 4. Verify that the country exists in countries table
+    const [country]: any = await db.execute('SELECT name FROM countries WHERE id = ?', [value.country_id]);
+    if (country.length === 0) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Invalid country_id: Country does not exist',
+      });
+    }
+
+    // 5. Update the country_id
+    await db.execute('UPDATE travelers SET country_id = ? WHERE id = ?', [value.country_id, id]);
+
+    return res.status(200).json({
+      status: 'success',
+      message: 'Traveler country updated successfully',
+      data: {
+        id: parseInt(String(id)),
+        country_id: value.country_id,
+        country_name: country[0].name,
+      },
+    });
+  } catch (error: any) {
+    console.error('❌ Update Traveler Country Error:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Internal server error',
+    });
+  }
+};
+
 
 
