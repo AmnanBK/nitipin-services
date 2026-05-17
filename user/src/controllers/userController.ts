@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { db } from '../config/db';
 import { AuthRequest } from '../middleware/authMiddleware';
 import { Review } from '../models/reviewModel';
@@ -1064,6 +1064,31 @@ export const setDefaultBuyerAddress = async (req: AuthRequest, res: Response) =>
     }
   }
 };
+
+/**
+ * GET /api/countries
+ * Retrieve a list of all countries.
+ * Public endpoint.
+ */
+export const getCountries = async (req: Request, res: Response) => {
+  try {
+    const [rows]: any = await db.execute(
+      'SELECT id, name FROM countries ORDER BY name ASC'
+    );
+
+    return res.status(200).json({
+      status: 'success',
+      data: rows,
+    });
+  } catch (error: any) {
+    console.error('❌ Get Countries Error:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Internal server error',
+    });
+  }
+};
+
 
 
 

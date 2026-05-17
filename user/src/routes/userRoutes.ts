@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getTravelerById, updateTraveler, updateTravelerStatus, updateTravelerCountry, getTravelerBalance, getTravelerReviews, getBuyerById, updateBuyer, createBuyerAddress, getBuyerAddresses, updateBuyerAddress, deleteBuyerAddress, setDefaultBuyerAddress } from '../controllers/userController';
+import { getTravelerById, updateTraveler, updateTravelerStatus, updateTravelerCountry, getTravelerBalance, getTravelerReviews, getBuyerById, updateBuyer, createBuyerAddress, getBuyerAddresses, updateBuyerAddress, deleteBuyerAddress, setDefaultBuyerAddress, getCountries } from '../controllers/userController';
 import { authMiddleware } from '../middleware/authMiddleware';
 
 const router = Router();
@@ -33,6 +33,10 @@ router.delete('/buyers/:id/addresses/:address_id', authMiddleware, deleteBuyerAd
 router.delete('/api/buyers/:id/addresses/:address_id', authMiddleware, deleteBuyerAddress);
 router.patch('/buyers/:id/addresses/:address_id/default', authMiddleware, setDefaultBuyerAddress);
 router.patch('/api/buyers/:id/addresses/:address_id/default', authMiddleware, setDefaultBuyerAddress);
+
+// Public routes
+router.get('/countries', getCountries);
+router.get('/api/countries', getCountries);
 
 // Fallback/debug route to see if path is stripped by gateway
 router.get('/:id', authMiddleware, getTravelerById);
