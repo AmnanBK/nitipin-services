@@ -398,6 +398,60 @@ export const getTravelerReviews = async (req: AuthRequest, res: Response) => {
   }
 };
 
+/**
+ * GET /api/buyers/:id
+ * Retrieve a buyer's profile by ID.
+ * Restricted to the profile owner.
+ */
+export const getBuyerById = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // 1. Ownership validation
+    if (!req.user) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Unauthorized: User not authenticated',
+      });
+    }
+
+    if (parseInt(String(req.user.id)) !== parseInt(String(id)) || req.user.role !== 'buyer') {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Forbidden: Not the account owner',
+      });
+    }
+
+    // 2. Fetch buyer details from MySQL
+    const [rows]: any = await db.execute(
+      'SELECT id, name, email, phone, profile_photo, balance FROM buyers WHERE id = ?',
+      [id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Buyer not found',
+      });
+    }
+
+    const buyer = rows[0];
+    buyer.balance = Number(buyer.balance); // Convert DECIMAL to number
+
+    return res.status(200).json({
+      status: 'success',
+      data: buyer,
+    });
+  } catch (error: any) {
+    console.error('❌ Get Buyer Profile Error:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Internal server error',
+    });
+  }
+};
+
+
 
 
 
