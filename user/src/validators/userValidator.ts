@@ -24,3 +24,12 @@ export const updateTravelerStatusSchema = Joi.object({
 export const updateTravelerCountrySchema = Joi.object({
   country_id: Joi.number().integer().positive().required(),
 });
+
+/**
+ * Joi validation schema for updating a buyer profile.
+ */
+export const updateBuyerSchema = Joi.object({
+  name: Joi.string().max(100).optional(),
+  phone: Joi.string().max(20).allow(null, '').optional(),
+  profile_photo: Joi.string().max(255).allow(null, '').optional(),
+});

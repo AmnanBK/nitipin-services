@@ -52,7 +52,7 @@ export const getTravelerById = async (req: AuthRequest, res: Response) => {
  * Update traveler profile (Name, Phone, Profile Photo, Bio, Country ID).
  * Restricted to the profile owner.
  */
-import { updateTravelerSchema, updateTravelerStatusSchema, updateTravelerCountrySchema } from '../validators/userValidator';
+import { updateTravelerSchema, updateTravelerStatusSchema, updateTravelerCountrySchema, updateBuyerSchema } from '../validators/userValidator';
 
 export const updateTraveler = async (req: AuthRequest, res: Response) => {
   try {
@@ -450,6 +450,99 @@ export const getBuyerById = async (req: AuthRequest, res: Response) => {
     });
   }
 };
+
+/**
+ * PUT /api/buyers/:id
+ * Update a buyer's profile (Name, Phone, Profile Photo).
+ * Restricted to the profile owner.
+ */
+export const updateBuyer = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // 1. Ownership validation
+    if (!req.user) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Unauthorized: User not authenticated',
+      });
+    }
+
+    if (parseInt(String(req.user.id)) !== parseInt(String(id)) || req.user.role !== 'buyer') {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Forbidden: Not the account owner',
+      });
+    }
+
+    // 2. Request body validation
+    const { error, value } = updateBuyerSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({
+        status: 'error',
+        message: error.details[0].message,
+      });
+    }
+
+    // 3. Check if buyer exists in database
+    const [existing]: any = await db.execute('SELECT id FROM buyers WHERE id = ?', [id]);
+    if (existing.length === 0) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Buyer not found',
+      });
+    }
+
+    // 4. Dynamic SQL Query Builder to update only provided fields
+    const fieldsToUpdate: string[] = [];
+    const values: any[] = [];
+
+    if (value.name !== undefined) {
+      fieldsToUpdate.push('name = ?');
+      values.push(value.name);
+    }
+    if (value.phone !== undefined) {
+      fieldsToUpdate.push('phone = ?');
+      values.push(value.phone === '' ? null : value.phone);
+    }
+    if (value.profile_photo !== undefined) {
+      fieldsToUpdate.push('profile_photo = ?');
+      values.push(value.profile_photo === '' ? null : value.profile_photo);
+    }
+
+    if (fieldsToUpdate.length === 0) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'At least one field (name, phone, profile_photo) must be provided to update',
+      });
+    }
+
+    values.push(id);
+    const sql = `UPDATE buyers SET ${fieldsToUpdate.join(', ')} WHERE id = ?`;
+    await db.execute(sql, values);
+
+    // 5. Fetch updated buyer to return
+    const [updatedRows]: any = await db.execute(
+      'SELECT id, name, email, phone, profile_photo, balance FROM buyers WHERE id = ?',
+      [id]
+    );
+    const updatedBuyer = updatedRows[0];
+    updatedBuyer.balance = Number(updatedBuyer.balance);
+
+    return res.status(200).json({
+      status: 'success',
+      message: 'Buyer profile updated successfully',
+      data: updatedBuyer,
+    });
+  } catch (error: any) {
+    console.error('❌ Update Buyer Profile Error:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Internal server error',
+    });
+  }
+};
+
 
 
 
