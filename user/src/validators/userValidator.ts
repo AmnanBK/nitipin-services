@@ -10,3 +10,10 @@ export const updateTravelerSchema = Joi.object({
   bio: Joi.string().allow(null, '').optional(),
   country_id: Joi.number().integer().positive().allow(null).optional(),
 });
+
+/**
+ * Joi validation schema for updating traveler account status.
+ */
+export const updateTravelerStatusSchema = Joi.object({
+  account_status: Joi.string().valid('active', 'inactive').required(),
+});

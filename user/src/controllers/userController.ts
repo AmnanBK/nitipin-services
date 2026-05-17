@@ -51,7 +51,7 @@ export const getTravelerById = async (req: AuthRequest, res: Response) => {
  * Update traveler profile (Name, Phone, Profile Photo, Bio, Country ID).
  * Restricted to the profile owner.
  */
-import { updateTravelerSchema } from '../validators/userValidator';
+import { updateTravelerSchema, updateTravelerStatusSchema } from '../validators/userValidator';
 
 export const updateTraveler = async (req: AuthRequest, res: Response) => {
   try {
@@ -155,4 +155,67 @@ export const updateTraveler = async (req: AuthRequest, res: Response) => {
     });
   }
 };
+
+/**
+ * PATCH /api/travelers/:id/status
+ * Toggle or set traveler account status ('active' | 'inactive').
+ * Restricted to the profile owner.
+ */
+export const updateTravelerStatus = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // 1. Ownership validation
+    if (!req.user) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Unauthorized: User not authenticated',
+      });
+    }
+
+    if (parseInt(String(req.user.id)) !== parseInt(String(id)) || req.user.role !== 'traveler') {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Forbidden: Not the account owner',
+      });
+    }
+
+    // 2. Request body validation
+    const { error, value } = updateTravelerStatusSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({
+        status: 'error',
+        message: error.details[0].message,
+      });
+    }
+
+    // 3. Check if traveler exists
+    const [existing]: any = await db.execute('SELECT account_status FROM travelers WHERE id = ?', [id]);
+    if (existing.length === 0) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Traveler not found',
+      });
+    }
+
+    // 4. Update the account status
+    await db.execute('UPDATE travelers SET account_status = ? WHERE id = ?', [value.account_status, id]);
+
+    // 5. Fetch updated traveler status to return
+    const [updated]: any = await db.execute('SELECT id, name, email, account_status FROM travelers WHERE id = ?', [id]);
+
+    return res.status(200).json({
+      status: 'success',
+      message: `Traveler status updated to ${value.account_status} successfully`,
+      data: updated[0],
+    });
+  } catch (error: any) {
+    console.error('❌ Update Traveler Status Error:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Internal server error',
+    });
+  }
+};
+
 
