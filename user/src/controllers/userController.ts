@@ -290,5 +290,60 @@ export const updateTravelerCountry = async (req: AuthRequest, res: Response) => 
   }
 };
 
+/**
+ * GET /api/travelers/:id/balance
+ * Retrieve traveler balance.
+ * Restricted to the profile owner.
+ */
+export const getTravelerBalance = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // 1. Ownership validation
+    if (!req.user) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Unauthorized: User not authenticated',
+      });
+    }
+
+    if (parseInt(String(req.user.id)) !== parseInt(String(id)) || req.user.role !== 'traveler') {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Forbidden: Not the account owner',
+      });
+    }
+
+    // 2. Fetch balance from MySQL
+    const [rows]: any = await db.execute('SELECT id, name, email, balance FROM travelers WHERE id = ?', [id]);
+    if (rows.length === 0) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Traveler not found',
+      });
+    }
+
+    const traveler = rows[0];
+    const balanceNum = Number(traveler.balance);
+
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        id: traveler.id,
+        name: traveler.name,
+        email: traveler.email,
+        balance: balanceNum,
+      },
+    });
+  } catch (error: any) {
+    console.error('❌ Get Traveler Balance Error:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Internal server error',
+    });
+  }
+};
+
+
 
 
