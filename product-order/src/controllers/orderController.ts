@@ -5,7 +5,9 @@ import { OrderModel } from '../models/orderModel';
 import { EscrowModel } from '../models/escrowModel';
 import { CartModel } from '../models/cartModel';
 import { sendNotification } from '../utils/notificationHelper';
+import { ProofModel } from '../models/proofModel';
 import { RowDataPacket } from 'mysql2';
+
 
 // POST /api/orders (Checkout)
 export const createCheckout = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -135,3 +137,191 @@ export const createCheckout = async (req: AuthRequest, res: Response): Promise<v
     conn.release();
   }
 };
+
+// PATCH /api/orders/:id/approve
+export const approveOrder = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const traveler_id = req.user?.id;
+
+    const [rows] = await db.execute<RowDataPacket[]>('SELECT traveler_id, status FROM orders WHERE id = ?', [id]);
+    if (rows.length === 0) { res.status(404).json({ message: 'Order tidak ditemukan' }); return; }
+    if (String(rows[0].traveler_id) !== String(traveler_id)) { res.status(403).json({ message: 'Bukan pesanan milikmu' }); return; }
+    if (rows[0].status !== 'pending_review') { res.status(400).json({ message: 'Status tidak valid' }); return; }
+
+    await db.execute('UPDATE orders SET status = ? WHERE id = ?', ['approved', id]);
+    res.status(200).json({ message: 'Pesanan berhasil disetujui (approved)' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error approving order' });
+  }
+};
+
+// PATCH /api/orders/:id/reject & cancel
+export const rejectOrCancelOrder = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { id } = req.params;
+  const user_id = req.user?.id;
+  const isReject = req.path.includes('reject');
+  const targetStatus = isReject ? 'rejected' : 'cancelled';
+
+  const conn = await db.getConnection();
+  await conn.beginTransaction();
+
+  try {
+    const [rows] = await conn.execute<RowDataPacket[]>('SELECT traveler_id, buyer_id, status, total_price FROM orders WHERE id = ? FOR UPDATE', [id]);
+    if (rows.length === 0) throw new Error('Order tidak ditemukan');
+    
+    const order = rows[0];
+
+    if (isReject && String(order.traveler_id) !== String(user_id)) throw new Error('Hanya traveler yang bisa reject');
+    if (!isReject && String(order.buyer_id) !== String(user_id)) throw new Error('Hanya buyer yang bisa cancel');
+    if (order.status !== 'pending_review' && order.status !== 'approved') throw new Error(`Tidak bisa mengubah status pesanan ini`);
+
+    await conn.execute('UPDATE orders SET status = ? WHERE id = ?', [targetStatus, id]);
+    await conn.execute('UPDATE escrow_payments SET status = ? WHERE order_id = ?', ['refunded', id]);
+    await conn.execute('UPDATE buyers SET balance = balance + ? WHERE id = ?', [order.total_price, order.buyer_id]);
+
+    await conn.commit();
+    res.status(200).json({ message: `Pesanan di-${targetStatus} dan uang dikembalikan ke buyer` });
+  } catch (error: any) {
+    await conn.rollback();
+    console.error(error);
+    res.status(400).json({ message: error.message });
+  } finally {
+    conn.release();
+  }
+};
+
+// PATCH /api/orders/:id/purchased
+export const purchaseOrder = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const traveler_id = req.user?.id;
+
+    const [rows] = await db.execute<RowDataPacket[]>('SELECT traveler_id, status FROM orders WHERE id = ?', [id]);
+    if (rows.length === 0) { res.status(404).json({ message: 'Order tidak ditemukan' }); return; }
+    if (String(rows[0].traveler_id) !== String(traveler_id)) { res.status(403).json({ message: 'Bukan pesanan milikmu' }); return; }
+    if (rows[0].status !== 'approved') { res.status(400).json({ message: 'Status belum approved' }); return; }
+
+    const proof = await ProofModel.findOne({ order_id: Number(id), type: 'purchase' });
+    if (!proof) { res.status(400).json({ message: 'Bukti pembelian (proof) belum diunggah ke MongoDB' }); return; }
+
+    await db.execute('UPDATE orders SET status = ? WHERE id = ?', ['purchased', id]);
+    res.status(200).json({ message: 'Pesanan diubah menjadi purchased' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error' });
+  }
+};
+
+// PATCH /api/orders/:id/ship
+export const shipOrder = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const traveler_id = req.user?.id;
+
+    const [rows] = await db.execute<RowDataPacket[]>('SELECT traveler_id, status FROM orders WHERE id = ?', [id]);
+    if (rows.length === 0) { res.status(404).json({ message: 'Order tidak ditemukan' }); return; }
+    if (String(rows[0].traveler_id) !== String(traveler_id)) { res.status(403).json({ message: 'Bukan pesanan milikmu' }); return; }
+    if (rows[0].status !== 'purchased') { res.status(400).json({ message: 'Status belum purchased' }); return; }
+
+    await db.execute('UPDATE orders SET status = ? WHERE id = ?', ['shipped', id]);
+    res.status(200).json({ message: 'Pesanan dikirim (shipped)' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error' });
+  }
+};
+
+// PATCH /api/orders/:id/complete
+export const completeOrder = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { id } = req.params;
+  const buyer_id = req.user?.id;
+
+  const conn = await db.getConnection();
+  await conn.beginTransaction();
+
+  try {
+    const [rows] = await conn.execute<RowDataPacket[]>('SELECT buyer_id, traveler_id, status, total_price FROM orders WHERE id = ? FOR UPDATE', [id]);
+    if (rows.length === 0) throw new Error('Order tidak ditemukan');
+    
+    const order = rows[0];
+
+    if (String(order.buyer_id) !== String(buyer_id)) throw new Error('Hanya buyer yang bisa menyelesaikan pesanan');
+    if (order.status !== 'shipped') throw new Error('Pesanan belum dikirim (shipped)');
+
+    const proof = await ProofModel.findOne({ order_id: Number(id), type: 'receipt' });
+    if (!proof) throw new Error('Bukti penerimaan (receipt) belum diunggah ke MongoDB');
+
+    await conn.execute('UPDATE orders SET status = ? WHERE id = ?', ['completed', id]);
+    await conn.execute('UPDATE escrow_payments SET status = ? WHERE order_id = ?', ['released', id]);
+    
+    try {
+      await conn.execute('UPDATE travelers SET balance = balance + ? WHERE id = ?', [order.total_price, order.traveler_id]);
+    } catch(e) {
+      console.warn('Kolom balance mungkin tidak ada di tabel travelers', e);
+    }
+
+    await conn.commit();
+    res.status(200).json({ message: 'Pesanan selesai! Dana diteruskan ke Traveler' });
+  } catch (error: any) {
+    await conn.rollback();
+    console.error(error);
+    res.status(400).json({ message: error.message });
+  } finally {
+    conn.release();
+  }
+};
+
+// GET /api/orders
+export const getOrders = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const user_id = req.user?.id;
+    const role = req.user?.role;
+    
+    let query = 'SELECT * FROM orders WHERE ';
+    const params = [];
+    
+    if (role === 'traveler') {
+      query += 'traveler_id = ?';
+    } else {
+      query += 'buyer_id = ?';
+    }
+    params.push(user_id);
+    
+    const [rows] = await db.execute(query, params);
+    res.status(200).json({ data: rows });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error' });
+  }
+};
+
+// GET /api/orders/:id
+export const getOrderById = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const [rows] = await db.execute('SELECT * FROM orders WHERE id = ?', [id]);
+    const orders = rows as any[];
+    if (orders.length === 0) { res.status(404).json({ message: 'Order tidak ditemukan' }); return; }
+    res.status(200).json({ data: orders[0] });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error' });
+  }
+};
+
+// GET /api/orders/:id/escrow
+export const getEscrowStatus = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const [rows] = await db.execute('SELECT * FROM escrow_payments WHERE order_id = ?', [id]);
+    const escrows = rows as any[];
+    if (escrows.length === 0) { res.status(404).json({ message: 'Escrow tidak ditemukan' }); return; }
+    res.status(200).json({ data: escrows[0] });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error' });
+  }
+};
+
