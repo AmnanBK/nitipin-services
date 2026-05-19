@@ -8,6 +8,8 @@ import orderRoutes from './routes/orderRoutes';
 import proofRoutes from './routes/proofRoutes';
 import reviewRoutes from './routes/reviewRoutes';
 import notificationRoutes from './routes/notificationRoutes';
+import chatRoutes from './routes/chatRoutes';
+
 
 dotenv.config();
 
@@ -26,6 +28,8 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/orders', proofRoutes); // Endpoint proofs digabung ke prefix /api/orders
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/chats', chatRoutes);
+
 
 // Jalankan Database & Server
 const startServer = async () => {
