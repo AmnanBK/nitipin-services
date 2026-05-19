@@ -24,3 +24,8 @@ npm-debug.log*
 
 # TypeScript
 *.js.map
+
+# Guide
+Project_Guide.md
+Panduan P2.md
+To-Do List Implementasi P2.md

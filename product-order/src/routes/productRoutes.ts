@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate, authorizeRole } from '../middlewares/auth';
+import { authMiddleware, authorize } from '../middleware/authMiddleware';
 import {
   createProduct,
   getProducts,
@@ -15,8 +15,8 @@ router.get('/', getProducts);
 router.get('/:id', getProductById);
 
 // Endpoint Private (Hanya Traveler)
-router.post('/', authenticate, authorizeRole('traveler'), createProduct);
-router.put('/:id', authenticate, authorizeRole('traveler'), updateProduct);
-router.delete('/:id', authenticate, authorizeRole('traveler'), deleteProduct);
+router.post('/', authMiddleware, authorize('traveler'), createProduct);
+router.put('/:id', authMiddleware, authorize('traveler'), updateProduct);
+router.delete('/:id', authMiddleware, authorize('traveler'), deleteProduct);
 
 export default router;
