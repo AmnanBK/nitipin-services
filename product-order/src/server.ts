@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { connectMongo } from './config/db';
 import productRoutes from './routes/productRoutes';
+import cartRoutes from './routes/cartRoutes';
 
 dotenv.config();
 
@@ -16,6 +17,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Registrasi Route
 app.use('/api/products', productRoutes);
+app.use('/api/cart', cartRoutes);
 
 // Jalankan Database & Server
 const startServer = async () => {
