@@ -29,3 +29,8 @@ npm-debug.log*
 Project_Guide.md
 Panduan P2.md
 To-Do List Implementasi P2.md
+
+# Testing
+mock_proof.ts
+create_order.ts
+test_cancel.ts

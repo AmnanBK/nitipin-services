@@ -5,6 +5,7 @@ import { connectMongo } from './config/db';
 import productRoutes from './routes/productRoutes';
 import cartRoutes from './routes/cartRoutes';
 import orderRoutes from './routes/orderRoutes';
+import proofRoutes from './routes/proofRoutes';
 
 dotenv.config();
 
@@ -20,6 +21,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/orders', proofRoutes); // Endpoint proofs digabung ke prefix /api/orders
 
 // Jalankan Database & Server
 const startServer = async () => {

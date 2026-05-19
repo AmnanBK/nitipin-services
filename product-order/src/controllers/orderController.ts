@@ -203,7 +203,7 @@ export const purchaseOrder = async (req: AuthRequest, res: Response): Promise<vo
     if (String(rows[0].traveler_id) !== String(traveler_id)) { res.status(403).json({ message: 'Bukan pesanan milikmu' }); return; }
     if (rows[0].status !== 'approved') { res.status(400).json({ message: 'Status belum approved' }); return; }
 
-    const proof = await ProofModel.findOne({ order_id: Number(id), type: 'purchase' });
+    const proof = await ProofModel.findOne({ order_id: Number(id), proof_type: 'purchase' });
     if (!proof) { res.status(400).json({ message: 'Bukti pembelian (proof) belum diunggah ke MongoDB' }); return; }
 
     await db.execute('UPDATE orders SET status = ? WHERE id = ?', ['purchased', id]);
@@ -250,7 +250,7 @@ export const completeOrder = async (req: AuthRequest, res: Response): Promise<vo
     if (String(order.buyer_id) !== String(buyer_id)) throw new Error('Hanya buyer yang bisa menyelesaikan pesanan');
     if (order.status !== 'shipped') throw new Error('Pesanan belum dikirim (shipped)');
 
-    const proof = await ProofModel.findOne({ order_id: Number(id), type: 'receipt' });
+    const proof = await ProofModel.findOne({ order_id: Number(id), proof_type: 'receipt' });
     if (!proof) throw new Error('Bukti penerimaan (receipt) belum diunggah ke MongoDB');
 
     await conn.execute('UPDATE orders SET status = ? WHERE id = ?', ['completed', id]);
@@ -287,7 +287,7 @@ export const getOrders = async (req: AuthRequest, res: Response): Promise<void> 
     } else {
       query += 'buyer_id = ?';
     }
-    params.push(user_id);
+    params.push(user_id ?? null);
     
     const [rows] = await db.execute(query, params);
     res.status(200).json({ data: rows });
