@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { connectMongo } from './config/db';
 import productRoutes from './routes/productRoutes';
 import cartRoutes from './routes/cartRoutes';
+import orderRoutes from './routes/orderRoutes';
 
 dotenv.config();
 
@@ -18,6 +19,7 @@ app.use(express.urlencoded({ extended: true }));
 // Registrasi Route
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
+app.use('/api/orders', orderRoutes);
 
 // Jalankan Database & Server
 const startServer = async () => {
