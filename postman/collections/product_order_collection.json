@@ -1,0 +1,1206 @@
+{
+  "info": {
+    "_postman_id": "a4d8b9e6-0568-45fa-bb23-1d904b78c85c",
+    "name": "Nitipin - Product-Order Service (P2)",
+    "description": "Kumpulan API untuk Product-Order Service (P2) pada aplikasi Jastip Nitipin.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "Get All Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products?search=&traveler_id=&minPrice=&maxPrice=",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Filter pencarian nama produk"
+                },
+                {
+                  "key": "traveler_id",
+                  "value": "",
+                  "description": "Filter produk milik traveler tertentu"
+                },
+                {
+                  "key": "minPrice",
+                  "value": "",
+                  "description": "Filter harga minimal"
+                },
+                {
+                  "key": "maxPrice",
+                  "value": "",
+                  "description": "Filter harga maksimal"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Product",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "42",
+                "description": "Diinject Gateway di Prod",
+                "disabled": true
+              },
+              {
+                "key": "x-user-role",
+                "value": "traveler",
+                "description": "Diinject Gateway di Prod",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_name\": \"Cokelat Toblerone Swiss\",\n  \"price\": 150000,\n  \"description\": \"Cokelat lezat ukuran 360g langsung dari Swiss.\",\n  \"photo_url\": \"https://storage.googleapis.com/nitipin-bucket-b03-tcc/products/sample.jpg\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/products",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Product",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "42",
+                "disabled": true
+              },
+              {
+                "key": "x-user-role",
+                "value": "traveler",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_name\": \"Cokelat Toblerone Swiss Original\",\n  \"price\": 160000,\n  \"description\": \"Cokelat susu lezat dengan nougat madu & almond.\",\n  \"photo_url\": \"https://storage.googleapis.com/nitipin-bucket-b03-tcc/products/sample.jpg\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/products/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Product",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "42",
+                "disabled": true
+              },
+              {
+                "key": "x-user-role",
+                "value": "traveler",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/products/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Cart",
+      "item": [
+        {
+          "name": "Get Cart Items",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "123",
+                "disabled": true
+              },
+              {
+                "key": "x-user-role",
+                "value": "buyer",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/cart",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "cart"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Item to Cart",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "123",
+                "disabled": true
+              },
+              {
+                "key": "x-user-role",
+                "value": "buyer",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": 1,\n  \"quantity\": 2,\n  \"notes\": \"Tolong pilih rasa cokelat original\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/cart/items",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "cart",
+                "items"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Cart Item",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "123",
+                "disabled": true
+              },
+              {
+                "key": "x-user-role",
+                "value": "buyer",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 3,\n  \"notes\": \"Catatan diganti: rasa vanilla saja\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/cart/items/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "cart",
+                "items",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Cart Item",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "123",
+                "disabled": true
+              },
+              {
+                "key": "x-user-role",
+                "value": "buyer",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/cart/items/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "cart",
+                "items",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Checkout (Create Order)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "123",
+                "disabled": true
+              },
+              {
+                "key": "x-user-role",
+                "value": "buyer",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shipping_address_id\": 5,\n  \"items\": [\n    {\n      \"product_id\": 1,\n      \"quantity\": 2\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/orders",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "orders"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Orders List",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "123",
+                "disabled": true
+              },
+              {
+                "key": "x-user-role",
+                "value": "buyer",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/orders",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "orders"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Order Detail",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "123",
+                "disabled": true
+              },
+              {
+                "key": "x-user-role",
+                "value": "buyer",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/orders/10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "10"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Escrow Status",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "123",
+                "disabled": true
+              },
+              {
+                "key": "x-user-role",
+                "value": "buyer",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/orders/10/escrow",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "10",
+                "escrow"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Order (Traveler)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "42",
+                "disabled": true
+              },
+              {
+                "key": "x-user-role",
+                "value": "traveler",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/orders/10/approve",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "10",
+                "approve"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reject Order (Traveler)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "42",
+                "disabled": true
+              },
+              {
+                "key": "x-user-role",
+                "value": "traveler",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/orders/10/reject",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "10",
+                "reject"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Order (Buyer)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "123",
+                "disabled": true
+              },
+              {
+                "key": "x-user-role",
+                "value": "buyer",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/orders/10/cancel",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "10",
+                "cancel"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Mark Purchased (Traveler)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "42",
+                "disabled": true
+              },
+              {
+                "key": "x-user-role",
+                "value": "traveler",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/orders/10/purchased",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "10",
+                "purchased"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Mark Shipped (Traveler)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "42",
+                "disabled": true
+              },
+              {
+                "key": "x-user-role",
+                "value": "traveler",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/orders/10/ship",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "10",
+                "ship"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Confirm Complete (Buyer)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "123",
+                "disabled": true
+              },
+              {
+                "key": "x-user-role",
+                "value": "buyer",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/orders/10/complete",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "10",
+                "complete"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Proofs (Photos)",
+      "item": [
+        {
+          "name": "Upload Proof Photo",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "42",
+                "disabled": true
+              },
+              {
+                "key": "x-user-role",
+                "value": "traveler",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "photo",
+                  "type": "file",
+                  "src": [],
+                  "description": "File gambar struk/bukti barang"
+                },
+                {
+                  "key": "proof_type",
+                  "value": "purchase",
+                  "type": "text",
+                  "description": "purchase (traveler) atau receipt (buyer)"
+                },
+                {
+                  "key": "description",
+                  "value": "Bukti struk pembelian Toblerone",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/orders/10/proofs",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "10",
+                "proofs"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Proof Photos List",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "42",
+                "disabled": true
+              },
+              {
+                "key": "x-user-role",
+                "value": "traveler",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/orders/10/proofs",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "10",
+                "proofs"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reviews",
+      "item": [
+        {
+          "name": "Get Traveler Reviews",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/reviews?traveler_id=42",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "reviews"
+              ],
+              "query": [
+                {
+                  "key": "traveler_id",
+                  "value": "42"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Review",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "123",
+                "disabled": true
+              },
+              {
+                "key": "x-user-role",
+                "value": "buyer",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_id\": 10,\n  \"rating\": 5,\n  \"comment\": \"Pelayanan sangat baik, cokelat diterima dengan rapi!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/reviews",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "reviews"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Get My Notifications",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "42",
+                "disabled": true
+              },
+              {
+                "key": "x-user-role",
+                "value": "traveler",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/notifications",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "notifications"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Chats",
+      "item": [
+        {
+          "name": "Send Message",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "123",
+                "disabled": true
+              },
+              {
+                "key": "x-user-role",
+                "value": "buyer",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"receiver_id\": 42,\n  \"message\": \"Halo traveler, barang saya tolong segera dibelikan ya.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/chats",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "chats"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Chat History",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "123",
+                "disabled": true
+              },
+              {
+                "key": "x-user-role",
+                "value": "buyer",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/chats/messages?with_user_id=42",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "chats",
+                "messages"
+              ],
+              "query": [
+                {
+                  "key": "with_user_id",
+                  "value": "42",
+                  "description": "ID user lawan bicara (tanpa prefix)"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Chat Contacts",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "123",
+                "disabled": true
+              },
+              {
+                "key": "x-user-role",
+                "value": "buyer",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/chats/contacts",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "chats",
+                "contacts"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ]
+}
