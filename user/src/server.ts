@@ -13,11 +13,13 @@ const PORT = process.env.PORT || 8082;
 app.use(cors());
 app.use(express.json());
 
-// Log all incoming requests to debug proxy paths
-app.use((req, res, next) => {
-  console.log(`🔍 [User Service] ${req.method} ${req.url} | Headers:`, JSON.stringify(req.headers));
-  next();
-});
+// Log all incoming requests to debug proxy paths in development
+if (process.env.NODE_ENV === 'development') {
+  app.use((req, res, next) => {
+    console.log(`🔍 [User Service] ${req.method} ${req.url} | Headers:`, JSON.stringify(req.headers));
+    next();
+  });
+}
 
 // Register routes
 app.use('/', userRoutes);
