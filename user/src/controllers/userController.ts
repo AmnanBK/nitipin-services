@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { db } from '../config/db';
 import { AuthRequest } from '../middleware/authMiddleware';
 import { Review } from '../models/reviewModel';
+import { uploadToGCS } from '../utils/uploadHelper';
 
 /**
  * GET /api/travelers/:id
@@ -95,6 +96,14 @@ export const updateTraveler = async (req: AuthRequest, res: Response) => {
     const fieldsToUpdate = [];
     const queryValues = [];
 
+    // GCS Upload if file is present
+    let profilePhotoUrl = undefined;
+    if (req.file) {
+      profilePhotoUrl = await uploadToGCS(req.file.buffer, req.file.originalname, req.file.mimetype);
+    } else if (value.profile_photo !== undefined) {
+      profilePhotoUrl = value.profile_photo === '' ? null : value.profile_photo;
+    }
+
     if (value.name !== undefined) {
       fieldsToUpdate.push('name = ?');
       queryValues.push(value.name);
@@ -103,9 +112,9 @@ export const updateTraveler = async (req: AuthRequest, res: Response) => {
       fieldsToUpdate.push('phone = ?');
       queryValues.push(value.phone);
     }
-    if (value.profile_photo !== undefined) {
+    if (profilePhotoUrl !== undefined) {
       fieldsToUpdate.push('profile_photo = ?');
-      queryValues.push(value.profile_photo);
+      queryValues.push(profilePhotoUrl);
     }
     if (value.bio !== undefined) {
       fieldsToUpdate.push('bio = ?');
@@ -497,6 +506,14 @@ export const updateBuyer = async (req: AuthRequest, res: Response) => {
     const fieldsToUpdate: string[] = [];
     const values: any[] = [];
 
+    // GCS Upload if file is present
+    let profilePhotoUrl = undefined;
+    if (req.file) {
+      profilePhotoUrl = await uploadToGCS(req.file.buffer, req.file.originalname, req.file.mimetype);
+    } else if (value.profile_photo !== undefined) {
+      profilePhotoUrl = value.profile_photo === '' ? null : value.profile_photo;
+    }
+
     if (value.name !== undefined) {
       fieldsToUpdate.push('name = ?');
       values.push(value.name);
@@ -505,9 +522,9 @@ export const updateBuyer = async (req: AuthRequest, res: Response) => {
       fieldsToUpdate.push('phone = ?');
       values.push(value.phone === '' ? null : value.phone);
     }
-    if (value.profile_photo !== undefined) {
+    if (profilePhotoUrl !== undefined) {
       fieldsToUpdate.push('profile_photo = ?');
-      values.push(value.profile_photo === '' ? null : value.profile_photo);
+      values.push(profilePhotoUrl);
     }
 
     if (fieldsToUpdate.length === 0) {
