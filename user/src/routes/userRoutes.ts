@@ -7,8 +7,8 @@ const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
 // Routes for traveler profile
-router.get('/travelers/:id', authMiddleware, getTravelerById);
-router.get('/api/travelers/:id', authMiddleware, getTravelerById);
+router.get('/travelers/:id', getTravelerById);
+router.get('/api/travelers/:id', getTravelerById);
 router.put('/travelers/:id', authMiddleware, upload.single('photo'), updateTraveler);
 router.put('/api/travelers/:id', authMiddleware, upload.single('photo'), updateTraveler);
 router.patch('/travelers/:id/status', authMiddleware, updateTravelerStatus);
