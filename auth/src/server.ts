@@ -11,8 +11,8 @@ const PORT = process.env.PORT || 8081;
 app.use(cors());
 app.use(express.json());
 
-// Routes
-app.use('/api/auth', authRoutes);
+// Routes — mounted at root because API Gateway strips /api/auth prefix when proxying
+app.use('/', authRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'Auth Service is running' });
