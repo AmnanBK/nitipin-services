@@ -34,3 +34,12 @@ To-Do List Implementasi P2.md
 mock_proof.ts
 create_order.ts
 test_cancel.ts
+.postman/
+postmann/
+
+# Deployment
+deployment_guide.md
+
+# Websocket
+walkthrough.md
+

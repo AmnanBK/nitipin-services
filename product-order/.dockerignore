@@ -1,0 +1,14 @@
+# Dependency
+node_modules/
+npm-debug.log*
+
+# File Environment (JANGAN masuk ke image!)
+.env
+.env.*
+
+# Service Account GCP (credential rahasia, tidak boleh masuk image)
+service-account.json
+*.json.bak
+
+# Folder build output (akan di-generate ulang di dalam container)
+dist/
