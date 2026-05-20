@@ -43,7 +43,7 @@ steps:
       - '${_AUTH_REGION}'
       - '--platform'
       - 'managed'
-      - '--no-allow-unauthenticated'
+      - '--allow-unauthenticated'
     id: 'deploy-auth'
     waitFor: ['push-auth']
 
@@ -92,7 +92,7 @@ steps:
       - '${_USER_REGION}'
       - '--platform'
       - 'managed'
-      - '--no-allow-unauthenticated'
+      - '--allow-unauthenticated'
     id: 'deploy-user'
     waitFor: ['push-user']
 
@@ -141,7 +141,7 @@ steps:
       - '${_PRODUCT_ORDER_REGION}'
       - '--platform'
       - 'managed'
-      - '--no-allow-unauthenticated'
+      - '--allow-unauthenticated'
     id: 'deploy-product-order'
     waitFor: ['push-product-order']
 
