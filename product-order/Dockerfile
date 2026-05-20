@@ -12,6 +12,6 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install --production
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/service-account.json ./service-account.json
 EXPOSE 8083
 CMD ["npm", "start"]
+
