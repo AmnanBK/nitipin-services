@@ -13,8 +13,14 @@ export const createProduct = async (req: AuthRequest, res: Response): Promise<vo
       return;
     }
 
-    if (!product_name || !price) {
+    if (!product_name || price === undefined || price === null) {
       res.status(400).json({ message: 'Nama produk dan harga wajib diisi' });
+      return;
+    }
+
+    const parsedPrice = Number(price);
+    if (isNaN(parsedPrice) || parsedPrice <= 0) {
+      res.status(400).json({ message: 'Harga harus berupa angka positif' });
       return;
     }
 
@@ -22,13 +28,13 @@ export const createProduct = async (req: AuthRequest, res: Response): Promise<vo
       traveler_id,
       product_name,
       description,
-      price: Number(price),
+      price: parsedPrice,
       photo_url
     });
 
     res.status(201).json({
       message: 'Produk berhasil ditambahkan',
-      data: { id: insertId, product_name, price }
+      data: { id: insertId, product_name, price: parsedPrice }
     });
   } catch (error) {
     console.error('[createProduct]', error);
@@ -93,10 +99,19 @@ export const updateProduct = async (req: AuthRequest, res: Response): Promise<vo
       return;
     }
 
+    let parsedPrice: number | undefined = undefined;
+    if (price !== undefined && price !== null) {
+      parsedPrice = Number(price);
+      if (isNaN(parsedPrice) || parsedPrice <= 0) {
+        res.status(400).json({ message: 'Harga harus berupa angka positif' });
+        return;
+      }
+    }
+
     await ProductModel.update(id, {
       product_name,
       description,
-      price: Number(price),
+      price: parsedPrice,
       photo_url
     });
 

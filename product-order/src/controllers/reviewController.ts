@@ -47,6 +47,13 @@ export const createReview = async (req: AuthRequest, res: Response): Promise<voi
       return;
     }
 
+    // Fetch buyer name from MySQL
+    const [buyerRows] = await db.execute<RowDataPacket[]>(
+      'SELECT name FROM buyers WHERE id = ?',
+      [buyer_id]
+    );
+    const buyerName = buyerRows.length > 0 ? buyerRows[0].name : undefined;
+
     // 2. Cek apakah sudah pernah direview
     const existingReview = await ReviewModel.findOne({ order_id: Number(order_id) });
     if (existingReview) {
@@ -57,8 +64,9 @@ export const createReview = async (req: AuthRequest, res: Response): Promise<voi
     // 3. Simpan ke MongoDB
     const review = await ReviewModel.create({
       order_id: Number(order_id),
-      traveler_id: String(order.traveler_id),
-      buyer_id: String(buyer_id),
+      traveler_id: Number(order.traveler_id),
+      buyer_id: Number(buyer_id),
+      buyer_name: buyerName,
       rating: Number(rating),
       comment
     });
@@ -77,11 +85,11 @@ export const getReviews = async (req: AuthRequest, res: Response): Promise<void>
 
     const filter: any = {};
     if (traveler_id) {
-      filter.traveler_id = String(traveler_id);
+      filter.traveler_id = Number(traveler_id);
     }
 
     // Urutkan dari yang terbaru
-    const reviews = await ReviewModel.find(filter).sort({ createdAt: -1 });
+    const reviews = await ReviewModel.find(filter).sort({ created_at: -1 });
 
     res.status(200).json({ message: 'Daftar ulasan berhasil diambil', data: reviews });
   } catch (error) {

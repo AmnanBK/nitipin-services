@@ -35,6 +35,11 @@ export const createCheckout = async (req: AuthRequest, res: Response): Promise<v
     // 1. Perulangan ke setiap items: Validasi produk & hitung harga
     for (const item of items) {
       const { product_id, quantity } = item;
+
+      const qty = Number(quantity);
+      if (isNaN(qty) || qty < 1 || !Number.isInteger(qty)) {
+        throw new Error(`Kuantitas produk dengan ID ${product_id} tidak valid (harus bilangan bulat positif)`);
+      }
       
       const [productRows] = await conn.execute<RowDataPacket[]>(
         'SELECT price, traveler_id, product_name FROM product_catalog WHERE id = ?',
@@ -255,12 +260,7 @@ export const completeOrder = async (req: AuthRequest, res: Response): Promise<vo
 
     await conn.execute('UPDATE orders SET status = ? WHERE id = ?', ['completed', id]);
     await conn.execute('UPDATE escrow_payments SET status = ? WHERE order_id = ?', ['released', id]);
-    
-    try {
-      await conn.execute('UPDATE travelers SET balance = balance + ? WHERE id = ?', [order.total_price, order.traveler_id]);
-    } catch(e) {
-      console.warn('Kolom balance mungkin tidak ada di tabel travelers', e);
-    }
+    await conn.execute('UPDATE travelers SET balance = balance + ? WHERE id = ?', [order.total_price, order.traveler_id]);
 
     await conn.commit();
     res.status(200).json({ message: 'Pesanan selesai! Dana diteruskan ke Traveler' });

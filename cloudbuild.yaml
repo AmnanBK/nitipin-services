@@ -1,0 +1,162 @@
+steps:
+  # =========================================================================
+  # 1. AUTH SERVICE
+  # =========================================================================
+  # Build Auth Service image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/jastip-registry/nitipin-auth:$COMMIT_SHA'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/jastip-registry/nitipin-auth:latest'
+      - '-f'
+      - 'auth/Dockerfile'
+      - 'auth'
+    id: 'build-auth'
+
+  # Push Auth Service image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/jastip-registry/nitipin-auth:$COMMIT_SHA'
+    id: 'push-auth'
+    waitFor: ['build-auth']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/jastip-registry/nitipin-auth:latest'
+    id: 'push-auth-latest'
+    waitFor: ['build-auth']
+
+  # Deploy Auth Service to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'nitipin-auth'
+      - '--image'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/jastip-registry/nitipin-auth:$COMMIT_SHA'
+      - '--region'
+      - '${_AUTH_REGION}'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+    id: 'deploy-auth'
+    waitFor: ['push-auth']
+
+  # =========================================================================
+  # 2. USER SERVICE
+  # =========================================================================
+  # Build User Service image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/jastip-registry/nitipin-user:$COMMIT_SHA'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/jastip-registry/nitipin-user:latest'
+      - '-f'
+      - 'user/Dockerfile'
+      - 'user'
+    id: 'build-user'
+    waitFor: [] # Parallel build execution
+
+  # Push User Service image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/jastip-registry/nitipin-user:$COMMIT_SHA'
+    id: 'push-user'
+    waitFor: ['build-user']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/jastip-registry/nitipin-user:latest'
+    id: 'push-user-latest'
+    waitFor: ['build-user']
+
+  # Deploy User Service to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'nitipin-user'
+      - '--image'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/jastip-registry/nitipin-user:$COMMIT_SHA'
+      - '--region'
+      - '${_USER_REGION}'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+    id: 'deploy-user'
+    waitFor: ['push-user']
+
+  # =========================================================================
+  # 3. PRODUCT-ORDER SERVICE
+  # =========================================================================
+  # Build Product-Order Service image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/jastip-registry/product-order:$COMMIT_SHA'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/jastip-registry/product-order:latest'
+      - '-f'
+      - 'product-order/Dockerfile'
+      - 'product-order'
+    id: 'build-product-order'
+    waitFor: [] # Parallel build execution
+
+  # Push Product-Order Service image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/jastip-registry/product-order:$COMMIT_SHA'
+    id: 'push-product-order'
+    waitFor: ['build-product-order']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/jastip-registry/product-order:latest'
+    id: 'push-product-order-latest'
+    waitFor: ['build-product-order']
+
+  # Deploy Product-Order Service to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'product-order'
+      - '--image'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/jastip-registry/product-order:$COMMIT_SHA'
+      - '--region'
+      - '${_PRODUCT_ORDER_REGION}'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+    id: 'deploy-product-order'
+    waitFor: ['push-product-order']
+
+images:
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/jastip-registry/nitipin-auth:$COMMIT_SHA'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/jastip-registry/nitipin-auth:latest'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/jastip-registry/nitipin-user:$COMMIT_SHA'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/jastip-registry/nitipin-user:latest'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/jastip-registry/product-order:$COMMIT_SHA'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/jastip-registry/product-order:latest'
+
+substitutions:
+  _AUTH_REGION: us-central1
+  _USER_REGION: us-central1
+  _PRODUCT_ORDER_REGION: asia-southeast2
+
+options:
+  logging: CLOUD_LOGGING_ONLY

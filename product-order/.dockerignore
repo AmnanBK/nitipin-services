@@ -12,3 +12,10 @@ service-account.json
 
 # Folder build output (akan di-generate ulang di dalam container)
 dist/
+node_modules
+dist
+npm-debug.log
+.git
+.env
+Dockerfile
+.dockerignore
