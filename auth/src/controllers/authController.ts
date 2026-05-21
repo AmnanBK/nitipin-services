@@ -37,7 +37,7 @@ export const registerTraveler = async (req: Request, res: Response) => {
     // 4. Insert into database
     const [result]: any = await db.execute(
       'INSERT INTO travelers (name, email, password_hash, phone, account_status) VALUES (?, ?, ?, ?, ?)',
-      [name, email, passwordHash, phone || null, 'active']
+      [name, email, passwordHash, phone || null, 'inactive']
     );
 
     // 5. Success response

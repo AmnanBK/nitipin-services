@@ -7,7 +7,6 @@ npm-debug.log*
 .env.*
 
 # Service Account GCP (credential rahasia, tidak boleh masuk image)
-service-account.json
 *.json.bak
 
 # Folder build output (akan di-generate ulang di dalam container)

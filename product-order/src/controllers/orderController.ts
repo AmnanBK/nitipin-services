@@ -178,9 +178,15 @@ export const rejectOrCancelOrder = async (req: AuthRequest, res: Response): Prom
     
     const order = rows[0];
 
-    if (isReject && String(order.traveler_id) !== String(user_id)) throw new Error('Hanya traveler yang bisa reject');
-    if (!isReject && String(order.buyer_id) !== String(user_id)) throw new Error('Hanya buyer yang bisa cancel');
-    if (order.status !== 'pending_review' && order.status !== 'approved') throw new Error(`Tidak bisa mengubah status pesanan ini`);
+    if (isReject) {
+      // Traveler reject: hanya dari pending_review
+      if (String(order.traveler_id) !== String(user_id)) throw new Error('Hanya traveler yang bisa reject');
+      if (order.status !== 'pending_review') throw new Error('Pesanan sudah tidak bisa ditolak');
+    } else {
+      // Buyer cancel: hanya dari pending_review
+      if (String(order.buyer_id) !== String(user_id)) throw new Error('Hanya buyer yang bisa cancel');
+      if (order.status !== 'pending_review') throw new Error('Pesanan sudah disetujui, tidak bisa dibatalkan');
+    }
 
     await conn.execute('UPDATE orders SET status = ? WHERE id = ?', [targetStatus, id]);
     await conn.execute('UPDATE escrow_payments SET status = ? WHERE order_id = ?', ['refunded', id]);
@@ -304,7 +310,19 @@ export const getOrderById = async (req: AuthRequest, res: Response): Promise<voi
     const [rows] = await db.execute('SELECT * FROM orders WHERE id = ?', [id]);
     const orders = rows as any[];
     if (orders.length === 0) { res.status(404).json({ message: 'Order tidak ditemukan' }); return; }
-    res.status(200).json({ data: orders[0] });
+
+    const order = orders[0];
+    const userId = String(req.user?.id);
+    const role = req.user?.role;
+
+    if (role === 'buyer' && String(order.buyer_id) !== userId) {
+      res.status(403).json({ message: 'Forbidden' }); return;
+    }
+    if (role === 'traveler' && String(order.traveler_id) !== userId) {
+      res.status(403).json({ message: 'Forbidden' }); return;
+    }
+
+    res.status(200).json({ data: order });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error' });
@@ -315,10 +333,31 @@ export const getOrderById = async (req: AuthRequest, res: Response): Promise<voi
 export const getEscrowStatus = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const [rows] = await db.execute('SELECT * FROM escrow_payments WHERE order_id = ?', [id]);
+    const [rows] = await db.execute(
+      `SELECT e.*, o.buyer_id, o.traveler_id 
+       FROM escrow_payments e
+       JOIN orders o ON e.order_id = o.id
+       WHERE e.order_id = ?`,
+      [id]
+    );
     const escrows = rows as any[];
     if (escrows.length === 0) { res.status(404).json({ message: 'Escrow tidak ditemukan' }); return; }
-    res.status(200).json({ data: escrows[0] });
+
+    const escrow = escrows[0];
+    const userId = String(req.user?.id);
+    const role = req.user?.role;
+
+    if (role === 'buyer' && String(escrow.buyer_id) !== userId) {
+      res.status(403).json({ message: 'Forbidden' }); return;
+    }
+    if (role === 'traveler' && String(escrow.traveler_id) !== userId) {
+      res.status(403).json({ message: 'Forbidden' }); return;
+    }
+
+    delete escrow.buyer_id;
+    delete escrow.traveler_id;
+
+    res.status(200).json({ data: escrow });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error' });

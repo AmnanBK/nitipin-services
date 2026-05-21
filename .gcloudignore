@@ -6,3 +6,5 @@ dist/
 **/dist/
 .env
 **/.env
+# Include service account key for Docker build context
+!**/service-account.json

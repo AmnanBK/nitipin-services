@@ -156,7 +156,7 @@ images:
 substitutions:
   _AUTH_REGION: us-central1
   _USER_REGION: us-central1
-  _PRODUCT_ORDER_REGION: asia-southeast2
+  _PRODUCT_ORDER_REGION: us-central1
 
 options:
   logging: CLOUD_LOGGING_ONLY
