@@ -5,13 +5,15 @@ import {
   getProducts,
   getProductById,
   updateProduct,
-  deleteProduct
+  deleteProduct,
+  searchProductByName
 } from '../controllers/productController';
 
 const router = Router();
 
 // Endpoint Publik
 router.get('/', getProducts);
+router.get('/search', searchProductByName);
 router.get('/:id', getProductById);
 
 // Endpoint Private (Hanya Traveler)

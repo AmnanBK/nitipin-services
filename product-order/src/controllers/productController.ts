@@ -61,6 +61,27 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
   }
 };
 
+// 2b. SEARCH PRODUCT BY NAME (Publik)
+export const searchProductByName = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { name } = req.query;
+
+    if (!name) {
+      res.status(400).json({ message: 'Parameter name wajib diisi' });
+      return;
+    }
+
+    const products = await ProductModel.findAll({
+      search: name as string
+    });
+
+    res.status(200).json({ message: 'Hasil pencarian produk berdasarkan nama', data: products });
+  } catch (error) {
+    console.error('[searchProductByName]', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 // 3. READ DETAIL PRODUCT (Publik)
 export const getProductById = async (req: Request, res: Response): Promise<void> => {
   try {
