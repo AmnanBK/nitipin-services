@@ -55,3 +55,13 @@ export const updateBuyerAddressSchema = Joi.object({
   postal_code: Joi.string().max(10).allow(null, '').optional(),
   is_default: Joi.number().valid(0, 1).optional(),
 });
+
+/**
+ * Joi validation schema for buyer top up.
+ */
+export const topUpBuyerSchema = Joi.object({
+  bank_name: Joi.string().max(100).required(),
+  account_number: Joi.string().max(50).required(),
+  amount: Joi.number().positive().required(),
+});
+

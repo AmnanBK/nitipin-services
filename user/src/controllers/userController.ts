@@ -53,7 +53,7 @@ export const getTravelerById = async (req: AuthRequest, res: Response) => {
  * Update traveler profile (Name, Phone, Profile Photo, Bio, Country ID).
  * Restricted to the profile owner.
  */
-import { updateTravelerSchema, updateTravelerStatusSchema, updateTravelerCountrySchema, updateBuyerSchema, createBuyerAddressSchema, updateBuyerAddressSchema } from '../validators/userValidator';
+import { updateTravelerSchema, updateTravelerStatusSchema, updateTravelerCountrySchema, updateBuyerSchema, createBuyerAddressSchema, updateBuyerAddressSchema, topUpBuyerSchema } from '../validators/userValidator';
 
 export const updateTraveler = async (req: AuthRequest, res: Response) => {
   try {
@@ -1079,6 +1079,73 @@ export const setDefaultBuyerAddress = async (req: AuthRequest, res: Response) =>
     if (conn) {
       conn.release();
     }
+  }
+};
+
+/**
+ * POST /api/buyers/:id/topup
+ * Top up a buyer's balance.
+ * Restricted to the profile owner.
+ */
+export const topUpBuyer = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // 1. Ownership validation
+    if (!req.user) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Unauthorized: User not authenticated',
+      });
+    }
+
+    if (parseInt(String(req.user.id)) !== parseInt(String(id)) || req.user.role !== 'buyer') {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Forbidden: Not the account owner',
+      });
+    }
+
+    // 2. Request body validation
+    const { error, value } = topUpBuyerSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({
+        status: 'error',
+        message: error.details[0].message,
+      });
+    }
+
+    // 3. Check if buyer exists in database
+    const [existing]: any = await db.execute('SELECT id FROM buyers WHERE id = ?', [id]);
+    if (existing.length === 0) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Buyer not found',
+      });
+    }
+
+    // 4. Update the balance
+    await db.execute('UPDATE buyers SET balance = balance + ? WHERE id = ?', [value.amount, id]);
+
+    // 5. Fetch updated buyer details to return
+    const [updatedRows]: any = await db.execute(
+      'SELECT id, name, email, phone, profile_photo, balance FROM buyers WHERE id = ?',
+      [id]
+    );
+    const updatedBuyer = updatedRows[0];
+    updatedBuyer.balance = Number(updatedBuyer.balance);
+
+    return res.status(200).json({
+      status: 'success',
+      message: 'Buyer balance topped up successfully',
+      data: updatedBuyer,
+    });
+  } catch (error: any) {
+    console.error('❌ Top Up Buyer Error:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Internal server error',
+    });
   }
 };
 
