@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { getTravelerById, updateTraveler, updateTravelerStatus, updateTravelerCountry, getTravelerBalance, getTravelerReviews, getBuyerById, updateBuyer, createBuyerAddress, getBuyerAddresses, updateBuyerAddress, deleteBuyerAddress, setDefaultBuyerAddress, getCountries } from '../controllers/userController';
+import { getTravelerById, updateTraveler, updateTravelerStatus, updateTravelerCountry, getTravelerBalance, getTravelerReviews, getBuyerById, updateBuyer, createBuyerAddress, getBuyerAddresses, updateBuyerAddress, deleteBuyerAddress, setDefaultBuyerAddress, getCountries, topUpBuyer } from '../controllers/userController';
 import { authMiddleware } from '../middleware/authMiddleware';
 
 const router = Router();
@@ -22,6 +22,7 @@ router.get('/api/buyers/:id/addresses', authMiddleware, getBuyerAddresses);
 router.put('/api/buyers/:id/addresses/:address_id', authMiddleware, updateBuyerAddress);
 router.delete('/api/buyers/:id/addresses/:address_id', authMiddleware, deleteBuyerAddress);
 router.patch('/api/buyers/:id/addresses/:address_id/default', authMiddleware, setDefaultBuyerAddress);
+router.post('/api/buyers/:id/topup', authMiddleware, topUpBuyer);
 
 // Public routes
 router.get('/api/countries', getCountries);
