@@ -416,7 +416,7 @@ export const getBuyerById = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
 
-    // 1. Ownership validation
+    // 1. Ownership / Authorization validation
     if (!req.user) {
       return res.status(401).json({
         status: 'error',
@@ -424,10 +424,13 @@ export const getBuyerById = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    if (parseInt(String(req.user.id)) !== parseInt(String(id)) || req.user.role !== 'buyer') {
+    const isOwner = parseInt(String(req.user.id)) === parseInt(String(id)) && req.user.role === 'buyer';
+    const isTraveler = req.user.role === 'traveler';
+
+    if (!isOwner && !isTraveler) {
       return res.status(403).json({
         status: 'error',
-        message: 'Forbidden: Not the account owner',
+        message: 'Forbidden: Access denied',
       });
     }
 
@@ -445,7 +448,13 @@ export const getBuyerById = async (req: AuthRequest, res: Response) => {
     }
 
     const buyer = rows[0];
-    buyer.balance = Number(buyer.balance); // Convert DECIMAL to number
+
+    // 3. Hide balance if requested by a traveler
+    if (!isOwner) {
+      delete buyer.balance;
+    } else {
+      buyer.balance = Number(buyer.balance); // Convert DECIMAL to number
+    }
 
     return res.status(200).json({
       status: 'success',
