@@ -29,6 +29,16 @@ export const createCheckout = async (req: AuthRequest, res: Response): Promise<v
   await conn.beginTransaction();
 
   try {
+    // Validasi kepemilikan alamat pengiriman sebelum memproses checkout
+    const [addressRows]: any = await conn.execute(
+      'SELECT id FROM buyer_addresses WHERE id = ? AND buyer_id = ?',
+      [shipping_address_id, buyer_id]
+    );
+
+    if (addressRows.length === 0) {
+      throw new Error('Alamat pengiriman tidak ditemukan atau bukan milik Anda');
+    }
+
     let totalOverallPrice = 0;
     const checkoutItems = [];
 
@@ -42,7 +52,7 @@ export const createCheckout = async (req: AuthRequest, res: Response): Promise<v
       }
       
       const [productRows] = await conn.execute<RowDataPacket[]>(
-        'SELECT price, traveler_id, product_name FROM product_catalog WHERE id = ?',
+        'SELECT price, traveler_id, product_name FROM product_catalog WHERE id = ? AND is_deleted = 0',
         [product_id]
       );
 

@@ -108,3 +108,34 @@ export const getContacts = async (req: AuthRequest, res: Response): Promise<void
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+
+// PUT /api/chats/read/:with_user_id
+export const markMessagesAsRead = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const raw_user_id = req.user?.id;
+    const user_role = req.user?.role;
+    if (!raw_user_id || !user_role) { res.status(401).json({ message: 'Unauthorized' }); return; }
+
+    const { with_user_id } = req.params;
+    if (!with_user_id) {
+      res.status(400).json({ message: 'Parameter path with_user_id wajib diisi' });
+      return;
+    }
+
+    const with_user_role = user_role === 'buyer' ? 'traveler' : 'buyer';
+    const user_id = `${user_role}_${raw_user_id}`;
+    const formatted_with_user_id = `${with_user_role}_${with_user_id}`;
+
+    // Ubah status is_read menjadi true untuk semua pesan masuk dari kontak ini
+    await ChatModel.updateMany(
+      { sender_id: formatted_with_user_id, receiver_id: user_id, is_read: false },
+      { $set: { is_read: true } }
+    );
+
+    res.status(200).json({ status: 'success', message: 'Pesan berhasil ditandai sebagai terbaca' });
+  } catch (error) {
+    console.error('[markMessagesAsRead]', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+

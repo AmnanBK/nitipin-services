@@ -68,7 +68,7 @@ export const ProductModel = {
       `SELECT p.*, t.name AS traveler_name 
        FROM product_catalog p
        LEFT JOIN travelers t ON p.traveler_id = t.id
-       WHERE p.id = ?`, 
+       WHERE p.id = ? AND p.is_deleted = 0`, 
       [id]
     );
     return rows.length > 0 ? rows[0] : null;
@@ -76,11 +76,31 @@ export const ProductModel = {
 
   // 4. Edit Produk
   async update(id: string, data: Partial<ProductData>): Promise<void> {
-    const { product_name, description, price, photo_url } = data;
-    await db.execute(
-      'UPDATE product_catalog SET product_name = ?, description = ?, price = ?, photo_url = ? WHERE id = ?',
-      [product_name ?? null, description ?? null, price ?? null, photo_url ?? null, id]
-    );
+    const fieldsToUpdate: string[] = [];
+    const values: any[] = [];
+
+    if (data.product_name !== undefined) {
+      fieldsToUpdate.push('product_name = ?');
+      values.push(data.product_name);
+    }
+    if (data.description !== undefined) {
+      fieldsToUpdate.push('description = ?');
+      values.push(data.description);
+    }
+    if (data.price !== undefined) {
+      fieldsToUpdate.push('price = ?');
+      values.push(data.price);
+    }
+    if (data.photo_url !== undefined) {
+      fieldsToUpdate.push('photo_url = ?');
+      values.push(data.photo_url);
+    }
+
+    if (fieldsToUpdate.length === 0) return;
+
+    values.push(id);
+    const query = `UPDATE product_catalog SET ${fieldsToUpdate.join(', ')} WHERE id = ?`;
+    await db.execute(query, values);
   },
 
   // 5. Hapus Produk
@@ -92,11 +112,11 @@ export const ProductModel = {
   async hasActiveOrders(id: string): Promise<boolean> {
     // Asumsi tabel orders memiliki kolom product_id dan status
     // Status aktif misalnya: 'pending', 'paid', 'processing', 'shipping'
-    // Status tidak aktif: 'completed', 'cancelled'
+    // Status tidak aktif: 'completed', 'cancelled', 'rejected'
     try {
       const [rows] = await db.execute<RowDataPacket[]>(
         `SELECT COUNT(*) as count FROM orders 
-         WHERE product_id = ? AND status NOT IN ('completed', 'cancelled')`,
+         WHERE product_id = ? AND status NOT IN ('completed', 'cancelled', 'rejected')`,
         [id]
       );
       return rows[0].count > 0;
