@@ -380,7 +380,34 @@ export const getTravelerReviews = async (req: AuthRequest, res: Response) => {
       console.warn('⚠️ MongoDB is offline or failed. Gracefully returning empty reviews list. Error:', mongoError.message);
     }
 
-    // 3. Calculate summary metrics
+    // 3. Fetch buyer profile photos from MySQL
+    let buyerPhotos: Record<number, string | null> = {};
+    const buyerIds = Array.from(new Set(reviews.map((r) => r.buyer_id)));
+    if (buyerIds.length > 0) {
+      try {
+        const placeholders = buyerIds.map(() => '?').join(',');
+        const [buyerRows]: any = await db.execute(
+          `SELECT id, profile_photo FROM buyers WHERE id IN (${placeholders})`,
+          buyerIds
+        );
+        buyerRows.forEach((row: any) => {
+          buyerPhotos[row.id] = row.profile_photo;
+        });
+      } catch (mysqlError: any) {
+        console.warn('⚠️ Failed to fetch buyer photos from MySQL. Error:', mysqlError.message);
+      }
+    }
+
+    // Map profile photo to each review element
+    const reviewsWithPhotos = reviews.map((r) => {
+      const reviewObj = r.toObject ? r.toObject() : r;
+      return {
+        ...reviewObj,
+        buyer_photo: buyerPhotos[r.buyer_id] || null,
+      };
+    });
+
+    // 4. Calculate summary metrics
     const totalReviews = reviews.length;
     const averageRating = totalReviews > 0
       ? Number((reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews).toFixed(1))
@@ -395,7 +422,7 @@ export const getTravelerReviews = async (req: AuthRequest, res: Response) => {
           total_reviews: totalReviews,
           average_rating: averageRating,
         },
-        reviews,
+        reviews: reviewsWithPhotos,
       },
     });
   } catch (error: any) {
