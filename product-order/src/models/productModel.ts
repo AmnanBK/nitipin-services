@@ -50,8 +50,12 @@ export const ProductModel = {
       params.push(filters.maxPrice);
     }
     if (filters.traveler_id) {
+      // Traveler viewing their own catalog — no account_status filter
       query += ` AND p.traveler_id = ?`;
       params.push(filters.traveler_id);
+    } else {
+      // Public catalog (buyer view) — only show products from active travelers
+      query += ` AND t.account_status = 'active'`;
     }
 
     const [rows] = await db.execute<RowDataPacket[]>(query, params);
