@@ -285,13 +285,28 @@ export const getOrders = async (req: AuthRequest, res: Response): Promise<void> 
     const user_id = req.user?.id;
     const role = req.user?.role;
     
-    let query = 'SELECT * FROM orders WHERE ';
+    let query = `
+      SELECT o.*, 
+             b.name AS buyer_name, 
+             b.email AS buyer_email, 
+             b.phone AS buyer_phone,
+             ba.full_address AS shipping_address, 
+             ba.city AS shipping_city, 
+             ba.postal_code AS shipping_postal_code, 
+             ba.label AS shipping_label,
+             p.product_name,
+             p.photo_url
+      FROM orders o
+      LEFT JOIN buyers b ON o.buyer_id = b.id
+      LEFT JOIN buyer_addresses ba ON o.shipping_address_id = ba.id
+      LEFT JOIN product_catalog p ON o.product_id = p.id
+      WHERE `;
     const params = [];
     
     if (role === 'traveler') {
-      query += 'traveler_id = ?';
+      query += 'o.traveler_id = ?';
     } else {
-      query += 'buyer_id = ?';
+      query += 'o.buyer_id = ?';
     }
     params.push(user_id ?? null);
     
@@ -307,7 +322,24 @@ export const getOrders = async (req: AuthRequest, res: Response): Promise<void> 
 export const getOrderById = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const [rows] = await db.execute('SELECT * FROM orders WHERE id = ?', [id]);
+    const query = `
+      SELECT o.*, 
+             b.name AS buyer_name, 
+             b.email AS buyer_email, 
+             b.phone AS buyer_phone,
+             ba.full_address AS shipping_address, 
+             ba.city AS shipping_city, 
+             ba.postal_code AS shipping_postal_code, 
+             ba.label AS shipping_label,
+             p.product_name,
+             p.photo_url
+      FROM orders o
+      LEFT JOIN buyers b ON o.buyer_id = b.id
+      LEFT JOIN buyer_addresses ba ON o.shipping_address_id = ba.id
+      LEFT JOIN product_catalog p ON o.product_id = p.id
+      WHERE o.id = ?
+    `;
+    const [rows] = await db.execute(query, [id]);
     const orders = rows as any[];
     if (orders.length === 0) { res.status(404).json({ message: 'Order tidak ditemukan' }); return; }
 
