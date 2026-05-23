@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { getTravelerById, updateTraveler, updateTravelerStatus, updateTravelerCountry, getTravelerBalance, getTravelerReviews, getBuyerById, updateBuyer, createBuyerAddress, getBuyerAddresses, updateBuyerAddress, deleteBuyerAddress, setDefaultBuyerAddress, getCountries, topUpBuyer } from '../controllers/userController';
+import { getTravelerById, updateTraveler, updateTravelerStatus, updateTravelerCountry, getTravelerBalance, getTravelerReviews, getBuyerById, updateBuyer, createBuyerAddress, getBuyerAddresses, updateBuyerAddress, deleteBuyerAddress, setDefaultBuyerAddress, getCountries, topUpBuyer, withdrawTravelerBalance } from '../controllers/userController';
 import { authMiddleware } from '../middleware/authMiddleware';
 
 const router = Router();
@@ -13,6 +13,7 @@ router.patch('/api/travelers/:id/status', authMiddleware, updateTravelerStatus);
 router.patch('/api/travelers/:id/country', authMiddleware, updateTravelerCountry);
 router.get('/api/travelers/:id/balance', authMiddleware, getTravelerBalance);
 router.get('/api/travelers/:id/reviews', getTravelerReviews);
+router.post('/api/travelers/:id/withdraw', authMiddleware, withdrawTravelerBalance);
 
 // Routes for buyer profile
 router.get('/api/buyers/:id', authMiddleware, getBuyerById);

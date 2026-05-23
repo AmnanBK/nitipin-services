@@ -1,6 +1,12 @@
 {
+  "scripts": {
+    "dev": "npx concurrently \"npm run dev --prefix auth\" \"npm run dev --prefix user\" \"npm run dev --prefix product-order\""
+  },
   "dependencies": {
     "dotenv": "^17.4.2",
     "mysql2": "^3.22.3"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
 }
