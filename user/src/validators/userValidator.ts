@@ -65,3 +65,13 @@ export const topUpBuyerSchema = Joi.object({
   amount: Joi.number().positive().required(),
 });
 
+/**
+ * Joi validation schema for traveler withdraw.
+ */
+export const withdrawTravelerSchema = Joi.object({
+  bank_name: Joi.string().max(100).required(),
+  account_number: Joi.string().max(50).required(),
+  account_holder: Joi.string().max(100).required(),
+});
+
+

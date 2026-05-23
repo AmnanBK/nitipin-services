@@ -53,7 +53,7 @@ export const getTravelerById = async (req: AuthRequest, res: Response) => {
  * Update traveler profile (Name, Phone, Profile Photo, Bio, Country ID).
  * Restricted to the profile owner.
  */
-import { updateTravelerSchema, updateTravelerStatusSchema, updateTravelerCountrySchema, updateBuyerSchema, createBuyerAddressSchema, updateBuyerAddressSchema, topUpBuyerSchema } from '../validators/userValidator';
+import { updateTravelerSchema, updateTravelerStatusSchema, updateTravelerCountrySchema, updateBuyerSchema, createBuyerAddressSchema, updateBuyerAddressSchema, topUpBuyerSchema, withdrawTravelerSchema } from '../validators/userValidator';
 
 export const updateTraveler = async (req: AuthRequest, res: Response) => {
   try {
@@ -1166,6 +1166,85 @@ export const getCountries = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('❌ Get Countries Error:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Internal server error',
+    });
+  }
+};
+
+/**
+ * POST /api/travelers/:id/withdraw
+ * Withdraw all of a traveler's balance (resets to 0).
+ * Restricted to the profile owner.
+ */
+export const withdrawTravelerBalance = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // 1. Ownership validation
+    if (!req.user) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Unauthorized: User not authenticated',
+      });
+    }
+
+    if (parseInt(String(req.user.id)) !== parseInt(String(id)) || req.user.role !== 'traveler') {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Forbidden: Not the account owner',
+      });
+    }
+
+    // 2. Request body validation
+    const { error, value } = withdrawTravelerSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({
+        status: 'error',
+        message: error.details[0].message,
+      });
+    }
+
+    // 3. Check if traveler exists in database & check current balance
+    const [existing]: any = await db.execute('SELECT id, balance FROM travelers WHERE id = ?', [id]);
+    if (existing.length === 0) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Traveler not found',
+      });
+    }
+
+    const currentBalance = Number(existing[0].balance);
+    if (currentBalance <= 0) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Insufficient balance to perform withdrawal',
+      });
+    }
+
+    // 4. Update the balance to 0
+    await db.execute('UPDATE travelers SET balance = 0 WHERE id = ?', [id]);
+
+    // 5. Fetch updated traveler details to return
+    const [updatedRows]: any = await db.execute(
+      `SELECT t.id, t.name, t.email, t.phone, t.profile_photo, t.bio, t.country_id, c.name as country_name, t.account_status, t.balance, t.created_at, t.updated_at 
+       FROM travelers t
+       LEFT JOIN countries c ON t.country_id = c.id
+       WHERE t.id = ?`,
+      [id]
+    );
+
+    const updatedTraveler = updatedRows[0];
+    updatedTraveler.balance = Number(updatedTraveler.balance);
+
+    return res.status(200).json({
+      status: 'success',
+      message: 'Traveler balance withdrawn successfully',
+      data: updatedTraveler,
+    });
+  } catch (error: any) {
+    console.error('❌ Withdraw Traveler Balance Error:', error);
     return res.status(500).json({
       status: 'error',
       message: 'Internal server error',

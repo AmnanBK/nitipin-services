@@ -1,0 +1,14 @@
+# Server
+PORT=8082
+NODE_ENV=development
+
+# MySQL (Cloud SQL)
+DB_HOST=35.255.101.50
+DB_PORT=3306
+DB_NAME=jastip_db
+DB_USER=jastip_user
+DB_PASSWORD=_UGIjF4tjdzQhM
+
+# MongoDB (GCE)
+# MongoDB belum di setup oleh P2, jadi dibiarkan localhost dulu
+MONGO_URI=mongodb://127.0.0.1:27017/jastip_nosql
