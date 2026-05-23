@@ -1,11 +1,13 @@
 import { Request, Response } from 'express';
 import { AuthRequest } from '../middleware/authMiddleware';
 import { ProductModel } from '../models/productModel';
+import { uploadToGCS } from '../utils/uploadHelper';
 
 // 1. CREATE PRODUCT (Hanya Traveler)
 export const createProduct = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { product_name, description, price, photo_url } = req.body;
+    const { product_name, description, price } = req.body;
+    let { photo_url } = req.body;
     const traveler_id = req.user?.id;
 
     if (!traveler_id) {
@@ -24,6 +26,17 @@ export const createProduct = async (req: AuthRequest, res: Response): Promise<vo
       return;
     }
 
+    // Jika ada file yang diunggah, proses unggah ke GCS
+    if (req.file) {
+      try {
+        photo_url = await uploadToGCS(req.file.buffer, req.file.originalname, req.file.mimetype, 'products');
+      } catch (uploadErr) {
+        console.error('[createProduct GCS upload]', uploadErr);
+        res.status(500).json({ message: 'Gagal mengunggah foto produk ke Cloud Storage' });
+        return;
+      }
+    }
+
     const insertId = await ProductModel.create({
       traveler_id,
       product_name,
@@ -34,7 +47,7 @@ export const createProduct = async (req: AuthRequest, res: Response): Promise<vo
 
     res.status(201).json({
       message: 'Produk berhasil ditambahkan',
-      data: { id: insertId, product_name, price: parsedPrice }
+      data: { id: insertId, product_name, price: parsedPrice, photo_url }
     });
   } catch (error) {
     console.error('[createProduct]', error);
@@ -104,7 +117,8 @@ export const getProductById = async (req: Request, res: Response): Promise<void>
 export const updateProduct = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const id = req.params.id as string;
-    const { product_name, description, price, photo_url } = req.body;
+    const { product_name, description, price } = req.body;
+    let { photo_url } = req.body;
     const traveler_id = req.user?.id;
 
     // Cek keberadaan dan kepemilikan
@@ -125,6 +139,17 @@ export const updateProduct = async (req: AuthRequest, res: Response): Promise<vo
       parsedPrice = Number(price);
       if (isNaN(parsedPrice) || parsedPrice <= 0) {
         res.status(400).json({ message: 'Harga harus berupa angka positif' });
+        return;
+      }
+    }
+
+    // Jika ada file baru yang diunggah, proses unggah ke GCS
+    if (req.file) {
+      try {
+        photo_url = await uploadToGCS(req.file.buffer, req.file.originalname, req.file.mimetype, 'products');
+      } catch (uploadErr) {
+        console.error('[updateProduct GCS upload]', uploadErr);
+        res.status(500).json({ message: 'Gagal mengunggah foto produk baru ke Cloud Storage' });
         return;
       }
     }

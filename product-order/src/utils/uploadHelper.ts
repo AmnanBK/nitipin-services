@@ -16,11 +16,11 @@ const bucket = storage.bucket(bucketName);
  * @param mimeType Tipe MIME (image/jpeg, image/png, dll)
  * @returns Public URL dari gambar yang di-upload
  */
-export const uploadToGCS = (fileBuffer: Buffer, originalName: string, mimeType: string): Promise<string> => {
+export const uploadToGCS = (fileBuffer: Buffer, originalName: string, mimeType: string, folderName: string = 'proofs'): Promise<string> => {
   return new Promise((resolve, reject) => {
     // Generate nama file unik menggunakan timestamp dan angka random
     const fileExtension = path.extname(originalName);
-    const uniqueFileName = `proofs/${Date.now()}-${Math.round(Math.random() * 1e9)}${fileExtension}`;
+    const uniqueFileName = `${folderName}/${Date.now()}-${Math.round(Math.random() * 1e9)}${fileExtension}`;
     const blob = bucket.file(uniqueFileName);
 
     // Buat stream untuk upload buffer ke GCS
