@@ -3,7 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import http from 'http';
 import { Server } from 'socket.io';
-import { connectMongo } from './config/db';
+import { connectMongo, db } from './config/db';
 import { initWebSocket } from './config/websocket';
 import productRoutes from './routes/productRoutes';
 import cartRoutes from './routes/cartRoutes';
@@ -44,6 +44,18 @@ app.use('/api/chats', chatRoutes);
 // Jalankan Database, WebSocket & Server
 const startServer = async () => {
   await connectMongo();
+  
+  // Jalankan migrasi kolom is_deleted ke tabel product_catalog jika belum ada
+  try {
+    await db.execute('ALTER TABLE product_catalog ADD COLUMN is_deleted TINYINT(1) NOT NULL DEFAULT 0');
+    console.log('✅ Migrasi: Kolom is_deleted berhasil ditambahkan ke product_catalog');
+  } catch (err: any) {
+    if (err.code !== 'ER_DUP_FIELDNAME') {
+      console.error('❌ Migrasi Gagal:', err);
+    } else {
+      console.log('ℹ️ Migrasi: Kolom is_deleted sudah ada di product_catalog');
+    }
+  }
   
   // Inisialisasi WebSocket
   initWebSocket(io);

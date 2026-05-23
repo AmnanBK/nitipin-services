@@ -33,7 +33,7 @@ export const ProductModel = {
       SELECT p.*, t.name AS traveler_name, t.country_id
       FROM product_catalog p
       LEFT JOIN travelers t ON p.traveler_id = t.id
-      WHERE 1=1
+      WHERE p.is_deleted = 0
     `;
     const params: any[] = [];
 
@@ -81,7 +81,7 @@ export const ProductModel = {
 
   // 5. Hapus Produk
   async delete(id: string): Promise<void> {
-    await db.execute('DELETE FROM product_catalog WHERE id = ?', [id]);
+    await db.execute('UPDATE product_catalog SET is_deleted = 1 WHERE id = ?', [id]);
   },
 
   // Cek apakah ada order aktif untuk produk ini
