@@ -41,6 +41,25 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/chats', chatRoutes);
 
+app.get('/health', async (req, res) => {
+  try {
+    // Quick check on MySQL connection
+    await db.query('SELECT 1');
+    res.json({
+      status: 'Product-Order Service is running',
+      database: {
+        mysql: 'connected',
+        mongodb: 'connected (verified during startup)',
+      },
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      status: 'Product-Order Service is degraded',
+      error: error.message,
+    });
+  }
+});
+
 // Jalankan Database, WebSocket & Server
 const startServer = async () => {
   await connectMongo();
